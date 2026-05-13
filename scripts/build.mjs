@@ -20,7 +20,7 @@ await build({
   sourcemap: true,
 });
 
-for (const fileName of ["index.html", "styles.css", "app.js", "app.js.map"]) {
+for (const fileName of ["index.html", "guide.html", "styles.css", "app.js", "app.js.map"]) {
   await copyFile(join(siteDir, fileName), join(docsDir, fileName));
 }
 

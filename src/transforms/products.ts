@@ -30,7 +30,6 @@ export type ProductTransformResult = {
 };
 
 type ParentContext = {
-  productPage: string;
   handle: string;
   title: string;
   body: string;
@@ -78,31 +77,37 @@ export function transformProducts(
       }
 
       let body = row["Description"] ?? "";
+      const productPage = (row["Product Page"] ?? "").trim();
       if (options.storefrontBaseUrl?.trim()) {
-        const rewritten = rewriteProductLinks(body, {
-          baseUrl: options.storefrontBaseUrl.trim(),
-          productPage: row["Product Page"] ?? "nettlesome-pantry",
-          handles,
-        });
-        body = rewritten.html;
-        linkStatsList.push(rewritten.stats);
-        for (const entry of rewritten.entries) {
-          if (entry.action === "unchanged") {
-            continue;
-          }
-          linkReview.push({
-            productHandle: handle,
-            productTitle: title,
-            action: entry.action,
-            originalHref: entry.originalHref,
-            resultHref: entry.resultHref,
-            reason: entry.reason,
+        if (!productPage) {
+          warnings.push(
+            `Product "${title || handle}" is missing Product Page; description links were not rewritten.`,
+          );
+        } else {
+          const rewritten = rewriteProductLinks(body, {
+            baseUrl: options.storefrontBaseUrl.trim(),
+            productPage,
+            handles,
           });
+          body = rewritten.html;
+          linkStatsList.push(rewritten.stats);
+          for (const entry of rewritten.entries) {
+            if (entry.action === "unchanged") {
+              continue;
+            }
+            linkReview.push({
+              productHandle: handle,
+              productTitle: title,
+              action: entry.action,
+              originalHref: entry.originalHref,
+              resultHref: entry.resultHref,
+              reason: entry.reason,
+            });
+          }
         }
       }
 
       parent = {
-        productPage: row["Product Page"] ?? "nettlesome-pantry",
         handle,
         title,
         body,

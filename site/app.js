@@ -736,30 +736,36 @@ function transformProducts(rows, options = {}) {
         continue;
       }
       let body = row["Description"] ?? "";
+      const productPage = (row["Product Page"] ?? "").trim();
       if (options.storefrontBaseUrl?.trim()) {
-        const rewritten = rewriteProductLinks(body, {
-          baseUrl: options.storefrontBaseUrl.trim(),
-          productPage: row["Product Page"] ?? "nettlesome-pantry",
-          handles
-        });
-        body = rewritten.html;
-        linkStatsList.push(rewritten.stats);
-        for (const entry of rewritten.entries) {
-          if (entry.action === "unchanged") {
-            continue;
-          }
-          linkReview.push({
-            productHandle: handle,
-            productTitle: title,
-            action: entry.action,
-            originalHref: entry.originalHref,
-            resultHref: entry.resultHref,
-            reason: entry.reason
+        if (!productPage) {
+          warnings.push(
+            `Product "${title || handle}" is missing Product Page; description links were not rewritten.`
+          );
+        } else {
+          const rewritten = rewriteProductLinks(body, {
+            baseUrl: options.storefrontBaseUrl.trim(),
+            productPage,
+            handles
           });
+          body = rewritten.html;
+          linkStatsList.push(rewritten.stats);
+          for (const entry of rewritten.entries) {
+            if (entry.action === "unchanged") {
+              continue;
+            }
+            linkReview.push({
+              productHandle: handle,
+              productTitle: title,
+              action: entry.action,
+              originalHref: entry.originalHref,
+              resultHref: entry.resultHref,
+              reason: entry.reason
+            });
+          }
         }
       }
       parent = {
-        productPage: row["Product Page"] ?? "nettlesome-pantry",
         handle,
         title,
         body,
@@ -934,16 +940,24 @@ function convertSquarespaceCsv(text, options = {}) {
         {
           title: "Links rewritten",
           intro: "These product links were updated to Shopify product URLs.",
-          items: rewritten.map(
-            (item) => `${item.productTitle} (${item.productHandle}): ${item.originalHref} -> ${item.resultHref ?? ""}`
-          )
+          items: [],
+          linkItems: rewritten.map((item) => ({
+            productTitle: item.productTitle,
+            productHandle: item.productHandle,
+            originalHref: item.originalHref,
+            resultHref: item.resultHref
+          }))
         },
         {
           title: "Links flagged for review",
           intro: "These links were left unchanged on purpose. Fix them in Shopify after import if needed.",
-          items: flagged.map(
-            (item) => `${item.productTitle} (${item.productHandle}): ${item.originalHref}${item.reason ? ` \u2014 ${item.reason}` : ""}`
-          )
+          items: [],
+          linkItems: flagged.map((item) => ({
+            productTitle: item.productTitle,
+            productHandle: item.productHandle,
+            originalHref: item.originalHref,
+            reason: item.reason
+          }))
         }
       ],
       notes: [
@@ -983,8 +997,9 @@ var DEFAULT_STOREFRONT_URL = "https://my-store.myshopify.com";
 function initApp(root2) {
   root2.innerHTML = `
     <main class="panel">
-      <header>
+      <header>      
         <h1>Squarespace to Shopify CSV</h1>
+        <h3 class="top-nav"><a class="text-link" href="./guide.html">Read the migration guide</a></h3>
         <p class="lede">Upload a Squarespace export. Conversion runs in your browser and your file is not uploaded anywhere.</p>
       </header>
       <form id="convert-form">
@@ -1071,19 +1086,18 @@ function renderSummary(container, result) {
     ([key, value]) => `<li><strong>${labelForStat(key)}:</strong> ${value}</li>`
   );
   const noteLines = result.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("");
-  const detailSections = result.details.filter((section) => section.items.length > 0).map((section) => {
+  const detailSections = result.details.filter((section) => section.items.length > 0 || (section.linkItems?.length ?? 0) > 0).map((section) => {
     const intro = section.intro ? `<p class="detail-intro">${escapeHtml(section.intro)}</p>` : "";
-    const items = section.items.slice(0, 25).map((item) => `<li>${escapeHtml(item)}</li>`).join("");
-    const overflow = section.items.length > 25 ? `<li>${section.items.length - 25} more not shown.</li>` : "";
+    const body = section.linkItems?.length ? renderLinkItems(section.linkItems) : `<ul>${section.items.slice(0, 25).map((item) => `<li>${escapeHtml(item)}</li>`).join("")}${section.items.length > 25 ? `<li>${section.items.length - 25} more not shown.</li>` : ""}</ul>`;
     return `
         <section class="detail-block">
           <h3>${escapeHtml(section.title)}</h3>
           ${intro}
-          <ul>${items}${overflow}</ul>
+          ${body}
         </section>
       `;
   }).join("");
-  const emptyDetails = result.kind === "products" && result.details.every((section) => section.items.length === 0) ? `<p class="detail-intro">No description links were rewritten or flagged. External links and links left unchanged are not listed here.</p>` : "";
+  const emptyDetails = result.kind === "products" && result.details.every((section) => section.items.length === 0 && (section.linkItems?.length ?? 0) === 0) ? `<p class="detail-intro">No description links were rewritten or flagged. External links and links left unchanged are not listed here.</p>` : "";
   container.innerHTML = `
     <h2>Ready to import</h2>
     <p>Detected <strong>${result.kind}</strong> export. Download <code>${result.outputFileName}</code> and import it in Shopify admin.</p>
@@ -1093,6 +1107,21 @@ function renderSummary(container, result) {
     ${emptyDetails}
   `;
   container.hidden = false;
+}
+function renderLinkItems(linkItems) {
+  const visible = linkItems.slice(0, 25);
+  const lines = visible.map((item) => {
+    const label = `${escapeHtml(item.productTitle)} (<code>${escapeHtml(item.productHandle)}</code>):`;
+    const original = `<pre class="link-url">${escapeHtml(item.originalHref)}</pre>`;
+    if (item.resultHref) {
+      const target = `<pre class="link-url">${escapeHtml(item.resultHref)}</pre>`;
+      return `<li class="link-item"><span class="link-label">${label}</span> ${original} <span class="link-arrow">-&gt;</span> ${target}</li>`;
+    }
+    const reason = item.reason ? `<span class="link-note">${escapeHtml(item.reason)}</span>` : "";
+    return `<li class="link-item"><span class="link-label">${label}</span> ${original} ${reason}</li>`;
+  }).join("");
+  const overflow = linkItems.length > 25 ? `<li class="link-item">${linkItems.length - 25} more not shown.</li>` : "";
+  return `<ul class="link-list">${lines}${overflow}</ul>`;
 }
 function renderWarnings(container, section, warnings) {
   const unique = [...new Set(warnings)];

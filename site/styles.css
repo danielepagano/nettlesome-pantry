@@ -35,9 +35,47 @@ main.panel {
 }
 
 h1,
-h2 {
+h2,
+h3 {
   margin: 0 0 0.75rem;
   line-height: 1.2;
+}
+
+.top-nav {
+  margin: 0 0 1rem;
+}
+
+.text-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--accent-dark);
+  text-decoration: underline;
+}
+
+.text-link:hover {
+  background: none;
+  color: var(--accent);
+}
+
+.guide section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.guide ol,
+.guide ul {
+  padding-left: 1.2rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.guide li + li {
+  margin-top: 0.35rem;
 }
 
 .lede,
@@ -129,6 +167,43 @@ button:disabled {
 #warnings {
   margin-top: 0;
   color: var(--warning);
+}
+
+.link-list {
+  padding-left: 1.2rem;
+}
+
+.link-item {
+  margin-bottom: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.link-label {
+  color: var(--ink);
+}
+
+.link-url {
+  display: inline-block;
+  margin: 0.2rem 0.15rem 0;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.link-arrow {
+  color: var(--ink);
+}
+
+.link-note {
+  display: block;
+  margin-top: 0.25rem;
 }
 
 code {
