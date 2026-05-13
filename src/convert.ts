@@ -3,10 +3,19 @@ import { detectExportKind, type ExportKind } from "./transforms/detect.ts";
 import { transformCustomers } from "./transforms/customers.ts";
 import { transformProducts } from "./transforms/products.ts";
 
+export type ConversionDetailLinkItem = {
+  productTitle: string;
+  productHandle: string;
+  originalHref: string;
+  resultHref?: string;
+  reason?: string;
+};
+
 export type ConversionDetailSection = {
   title: string;
   intro?: string;
   items: string[];
+  linkItems?: ConversionDetailLinkItem[];
 };
 
 export type ConversionSummary = {
@@ -55,18 +64,24 @@ export function convertSquarespaceCsv(
         {
           title: "Links rewritten",
           intro: "These product links were updated to Shopify product URLs.",
-          items: rewritten.map(
-            (item) =>
-              `${item.productTitle} (${item.productHandle}): ${item.originalHref} -> ${item.resultHref ?? ""}`,
-          ),
+          items: [],
+          linkItems: rewritten.map((item) => ({
+            productTitle: item.productTitle,
+            productHandle: item.productHandle,
+            originalHref: item.originalHref,
+            resultHref: item.resultHref,
+          })),
         },
         {
           title: "Links flagged for review",
           intro: "These links were left unchanged on purpose. Fix them in Shopify after import if needed.",
-          items: flagged.map(
-            (item) =>
-              `${item.productTitle} (${item.productHandle}): ${item.originalHref}${item.reason ? ` — ${item.reason}` : ""}`,
-          ),
+          items: [],
+          linkItems: flagged.map((item) => ({
+            productTitle: item.productTitle,
+            productHandle: item.productHandle,
+            originalHref: item.originalHref,
+            reason: item.reason,
+          })),
         },
       ],
       notes: [

@@ -61,6 +61,16 @@ describe("transformProducts", () => {
     expect(threePack?.["Variant Inventory Policy"]).toBe("continue");
   });
 
+  it("warns when Product Page is missing during link rewrite", () => {
+    const rows = loadFixture("squarespace-products.csv").rows;
+    rows[0]!["Product Page"] = "";
+    const result = transformProducts(rows, {
+      storefrontBaseUrl: "https://shop.example.com",
+    });
+    expect(result.warnings.some((warning) => warning.includes("missing Product Page"))).toBe(true);
+    expect(result.linkStats.rewritten).toBe(0);
+  });
+
   it("maps on-sale pricing when On Sale is Yes", () => {
     const rows = loadFixture("squarespace-products.csv").rows;
     rows[0]!["On Sale"] = "Yes";

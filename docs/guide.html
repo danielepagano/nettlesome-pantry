@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nettlesome Pantry migration guide</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="panel guide">
+      <p class="top-nav"><a class="text-link" href="./index.html">Back to the converter</a></p>
+      <header>
+        <h1>Nettlesome Pantry migration guide</h1>
+        <p class="lede">
+          Use this page with the converter on GitHub Pages. Your Squarespace CSV files stay on your computer; they are not uploaded to GitHub.
+        </p>
+      </header>
+
+      <section>
+        <h2>Before you start</h2>
+        <ul>
+          <li>Export fresh files from Squarespace right before import. Do not reuse old exports.</li>
+          <li>Do not email exports, paste them into GitHub issues, or commit them to git.</li>
+          <li>This tool converts products and contacts only. Orders, reviews, theme pages, shipping, taxes, and payments are handled separately in Shopify.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Step 1: Export from Squarespace</h2>
+        <ol>
+          <li>Products: in Squarespace, open Products and export the catalog CSV.</li>
+          <li>Contacts: open Contacts, choose Export all contacts, and save the profiles-style CSV.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Step 2: Convert on GitHub Pages</h2>
+        <ol>
+          <li>Open the <a class="text-link" href="./index.html">converter</a>.</li>
+          <li>Upload one Squarespace CSV at a time.</li>
+          <li>Leave export type on automatic unless the tool cannot tell products from contacts.</li>
+          <li>For contacts, keep the default country as <code>US</code> unless a row already has a shipping country.</li>
+          <li>For products, set the Shopify storefront URL to your real store domain or <code>your-store.myshopify.com</code> so product links in descriptions can be rewritten.</li>
+          <li>Read the summary, warnings, and link notes before you download.</li>
+          <li>Download <code>shopify-products.csv</code> and <code>shopify-customers.csv</code>.</li>
+        </ol>
+        <p class="hint">
+          Contacts without a shipping address are normal for newsletter signups and marketing contacts who never ordered. Only rows without an email are skipped.
+        </p>
+      </section>
+
+      <section>
+        <h2>Step 3: Import into Shopify</h2>
+        <ol>
+          <li>
+            <a class="text-link" href="https://admin.shopify.com/products">Products → Import</a>.
+            On the first pass, leave publish to all sales channels off if you want to review before going live.
+          </li>
+          <li><a class="text-link" href="https://admin.shopify.com/customers">Customers → Import</a>.</li>
+          <li>Spot-check prices, inventory, variants, images, and a few customer addresses.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Step 4: Fix the items this CSV does not cover</h2>
+        <ul>
+          <li>
+            Gift card: recreate it manually in Shopify.
+            <a class="text-link" href="https://help.shopify.com/en/manual/products/gift-card-products/add-update-gift-card-products">Adding or updating gift card products</a>,
+            <a class="text-link" href="https://help.shopify.com/en/manual/products/gift-card-products/faq">Creating and selling gift cards</a>.
+          </li>
+          <li>
+            Bundle-style products such as the Three Pack: rebuild them in Shopify so customers can pick soaps with real inventory links.
+            <a class="text-link" href="https://help.shopify.com/en/manual/products/bundles">Product bundles</a>,
+            <a class="text-link" href="https://help.shopify.com/en/manual/products/variants/add-variants">Adding variants</a>.
+          </li>
+          <li>
+            Sales: set compare-at and sale prices in Shopify. The converter imports the regular Squarespace <code>Price</code> when <code>On Sale</code> is <code>No</code>, even if an old sale price column is still present.
+            <a class="text-link" href="https://help.shopify.com/en/manual/products/details/product-pricing/sale-pricing">Setting sale prices for products</a>,
+            <a class="text-link" href="https://help.shopify.com/en/manual/discounts">Discounts</a>.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Step 5: Finish the move in Shopify</h2>
+        <p>
+          Complete the rest of the migration in Shopify: theme, shipping, taxes, payments, a test order, your domain, and URL redirects.
+          <a class="text-link" href="https://help.shopify.com/en/manual/migrating-to-shopify/migrating-from-squarespace">Squarespace migration guide</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
