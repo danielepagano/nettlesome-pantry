@@ -22,7 +22,7 @@ Browser-based helpers for moving Nettlesome Pantry from Squarespace to Shopify. 
 
 ### GitHub Pages setup
 
-In the GitHub repo settings, choose **Pages → Deploy from a branch**, branch `main`, folder `/site`. No deploy workflow is required.
+In the GitHub repo settings, choose **Pages → Deploy from a branch**, branch `main`, folder **`/docs`**. GitHub only offers the repo root or `/docs` as publish folders, not `/site`. After you merge, run `npm run build` and commit the updated `docs/` folder so Pages serves the converter instead of the root README. The first deploy can take a minute or two to appear.
 
 ### Privacy
 
@@ -41,7 +41,7 @@ npm run smoke
 - `npm run preview` serves `site/` at `http://localhost:4173` so the browser can load the bundled app.
 
 - `npm test` runs unit tests against anonymized fixtures in `tests/fixtures/` and against gitignored `test-data/` when that folder is present locally.
-- `npm run build` bundles the browser app into `site/app.js`.
+- `npm run build` bundles the browser app into `site/` and copies the published static files into `docs/` for GitHub Pages.
 - `npm run smoke` writes converted CSVs to `test-data/shopify-output/` for manual Shopify import preview.
 
 ### Manual Shopify smoke test
