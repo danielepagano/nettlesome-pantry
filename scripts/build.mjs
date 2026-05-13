@@ -1,12 +1,14 @@
 import { build } from "esbuild";
-import { mkdir } from "node:fs/promises";
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const siteDir = join(root, "site");
+const docsDir = join(root, "docs");
 
 await mkdir(siteDir, { recursive: true });
+await mkdir(docsDir, { recursive: true });
 
 await build({
   entryPoints: [join(root, "src", "ui", "main.ts")],
@@ -18,4 +20,10 @@ await build({
   sourcemap: true,
 });
 
-console.log("Built site/app.js");
+for (const fileName of ["index.html", "styles.css", "app.js", "app.js.map"]) {
+  await copyFile(join(siteDir, fileName), join(docsDir, fileName));
+}
+
+await writeFile(join(docsDir, ".nojekyll"), "");
+
+console.log("Built site/ and docs/ for GitHub Pages");

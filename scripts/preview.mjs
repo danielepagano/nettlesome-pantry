@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const siteDir = join(fileURLToPath(import.meta.url), "..", "..", "site");
+const siteDir = join(fileURLToPath(import.meta.url), "..", "..", "docs");
 const port = Number.parseInt(process.env.PORT ?? "4173", 10);
 
 const mimeTypes = {
