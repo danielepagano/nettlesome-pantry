@@ -14,7 +14,7 @@ npm run preview
 npm run smoke
 ```
 
-- `npm run build` bundles `src/` into `site/` and copies the published static files into `docs/` for GitHub Pages.
+- `npm run build` bundles `src/` into `docs/` for GitHub Pages.
 - `npm run preview` serves `docs/` at `http://localhost:4173`.
 - `npm run smoke` writes converted CSVs to `test-data/shopify-output/` when local Squarespace exports are present.
 - `npm test` uses anonymized fixtures in `tests/fixtures/` and optional gitignored `test-data/`.

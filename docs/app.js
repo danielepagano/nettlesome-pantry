@@ -455,7 +455,8 @@ function parseCsv(text) {
   const rows = parsed.data.map((row) => {
     const normalized = {};
     for (const [key, value] of Object.entries(row)) {
-      normalized[key] = value ?? "";
+      const cleanKey = key.replace(/^\uFEFF/, "").trim();
+      normalized[cleanKey] = value ?? "";
     }
     return normalized;
   });
@@ -564,33 +565,39 @@ function transformCustomers(rows, options = {}) {
   const warnings = [];
   const output = [];
   let skippedMissingEmail = 0;
-  let withoutName = 0;
+  let skippedMissingName = 0;
   let withoutAddress = 0;
   const defaultCountry = (options.defaultCountryCode ?? "US").trim().toUpperCase();
   for (const row of rows) {
-    const email = (row["Email"] ?? "").trim();
+    const normalized = normalizeContactRow(row);
+    const email = contactValue(normalized, "Email");
     if (!email) {
       skippedMissingEmail += 1;
       warnings.push("Skipped contact row with missing email.");
       continue;
     }
-    const customer = emptyCustomerRow();
-    customer["First Name"] = row["First Name"] ?? "";
-    customer["Last Name"] = row["Last Name"] ?? "";
-    customer.Email = email;
-    customer["Accepts Email Marketing"] = mapMarketing(row["Accepts Marketing"] ?? "");
-    customer["Default Address Address1"] = row["Shipping Address 1"] ?? "";
-    customer["Default Address Address2"] = row["Shipping Address 2"] ?? "";
-    customer["Default Address City"] = row["Shipping City"] ?? "";
-    customer["Default Address Province Code"] = row["Shipping Province/State"] ?? "";
-    customer["Default Address Zip"] = row["Shipping Zip"] ?? "";
-    customer["Default Address Phone"] = row["Shipping Phone Number"] ?? "";
-    customer.Tags = row["Tags"] ?? "";
-    const country = (row["Shipping Country"] ?? "").trim();
-    customer["Default Address Country Code"] = country || defaultCountry;
-    if (!customer["First Name"].trim() && !customer["Last Name"].trim()) {
-      withoutName += 1;
+    const { firstName, lastName } = contactName(normalized);
+    if (!firstName || !lastName) {
+      skippedMissingName += 1;
+      warnings.push("Skipped contact row missing required first or last name.");
+      continue;
     }
+    const customer = emptyCustomerRow();
+    customer["First Name"] = firstName;
+    customer["Last Name"] = lastName;
+    customer.Email = email;
+    customer["Accepts Email Marketing"] = mapMarketing(contactValue(normalized, "Accepts Marketing"));
+    customer["Default Address Address1"] = contactValue(normalized, "Shipping Address 1");
+    customer["Default Address Address2"] = contactValue(normalized, "Shipping Address 2");
+    customer["Default Address City"] = contactValue(normalized, "Shipping City");
+    customer["Default Address Province Code"] = contactValue(normalized, "Shipping Province/State");
+    customer["Default Address Zip"] = contactValue(normalized, "Shipping Zip");
+    customer["Default Address Phone"] = contactValue(normalized, "Shipping Phone Number");
+    customer.Tags = contactValue(normalized, "Tags");
+    customer["Accepts SMS Marketing"] = "no";
+    customer["Tax Exempt"] = "no";
+    const country = contactValue(normalized, "Shipping Country");
+    customer["Default Address Country Code"] = country || defaultCountry;
     const hasAddress = [
       customer["Default Address Address1"],
       customer["Default Address City"],
@@ -608,10 +615,43 @@ function transformCustomers(rows, options = {}) {
     rows: output,
     warnings,
     skippedMissingEmail,
+    skippedMissingName,
     importedCount: output.length,
-    withoutName,
     withoutAddress
   };
+}
+function normalizeContactRow(row) {
+  const normalized = {};
+  for (const [key, value] of Object.entries(row)) {
+    normalized[key.replace(/^\uFEFF/, "").trim().toLowerCase()] = (value ?? "").trim();
+  }
+  return normalized;
+}
+function contactValue(row, ...aliases) {
+  for (const alias of aliases) {
+    const value = row[alias.toLowerCase()];
+    if (value) {
+      return value;
+    }
+  }
+  return "";
+}
+function contactName(row) {
+  let firstName = contactValue(row, "First Name");
+  let lastName = contactValue(row, "Last Name");
+  if (!firstName || !lastName) {
+    const shippingName = contactValue(row, "Shipping Name", "Billing Name");
+    if (shippingName) {
+      const parts = shippingName.split(/\s+/).filter(Boolean);
+      if (!firstName && parts.length > 0) {
+        firstName = parts[0];
+      }
+      if (!lastName && parts.length > 1) {
+        lastName = parts.slice(1).join(" ");
+      }
+    }
+  }
+  return { firstName, lastName };
 }
 function mapMarketing(value) {
   const normalized = value.trim().toLowerCase();
@@ -973,19 +1013,21 @@ function convertSquarespaceCsv(text, options = {}) {
     return {
       kind,
       outputFileName: "shopify-customers.csv",
-      csv: stringifyCsv(result.headers, result.rows),
+      csv: `\uFEFF${stringifyCsv(result.headers, result.rows)}`,
       warnings: result.warnings,
       stats: {
+        sourceContacts: parsed.rows.length,
         imported: result.importedCount,
         skippedMissingEmail: result.skippedMissingEmail,
-        withoutAddress: result.withoutAddress,
-        withoutName: result.withoutName
+        skippedMissingName: result.skippedMissingName,
+        withoutAddress: result.withoutAddress
       },
       details: [],
       notes: [
-        `${result.withoutAddress} contact(s) have no shipping address. That is normal for newsletter signups and marketing contacts who never placed an order.`,
-        `${result.withoutName} contact(s) have no first or last name. Shopify can still import them with email only.`,
-        "Only rows missing an email are skipped."
+        "The download uses Shopify's customer CSV headers and only includes rows Shopify can import.",
+        `${result.withoutAddress} exported contact(s) have no shipping address. That is normal for newsletter signups and marketing contacts who never placed an order.`,
+        `${result.skippedMissingName} contact(s) were skipped because Shopify requires both a first and last name.`,
+        "Rows without email are also skipped."
       ]
     };
   }
@@ -1157,10 +1199,11 @@ function labelForStat(key) {
     linksRewritten: "Links rewritten",
     linksUnchanged: "Links unchanged",
     linksFlagged: "Links flagged for review",
-    imported: "Customers imported",
+    sourceContacts: "Contacts in Squarespace export",
+    imported: "Customers ready to import",
     skippedMissingEmail: "Skipped rows without email",
-    withoutAddress: "Contacts without shipping address",
-    withoutName: "Contacts without a name"
+    skippedMissingName: "Skipped rows without first or last name",
+    withoutAddress: "Contacts without shipping address"
   };
   return labels[key] ?? key;
 }

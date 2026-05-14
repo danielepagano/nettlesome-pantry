@@ -99,19 +99,21 @@ export function convertSquarespaceCsv(
     return {
       kind,
       outputFileName: "shopify-customers.csv",
-      csv: stringifyCsv(result.headers, result.rows),
+      csv: `\uFEFF${stringifyCsv(result.headers, result.rows)}`,
       warnings: result.warnings,
       stats: {
+        sourceContacts: parsed.rows.length,
         imported: result.importedCount,
         skippedMissingEmail: result.skippedMissingEmail,
+        skippedMissingName: result.skippedMissingName,
         withoutAddress: result.withoutAddress,
-        withoutName: result.withoutName,
       },
       details: [],
       notes: [
-        `${result.withoutAddress} contact(s) have no shipping address. That is normal for newsletter signups and marketing contacts who never placed an order.`,
-        `${result.withoutName} contact(s) have no first or last name. Shopify can still import them with email only.`,
-        "Only rows missing an email are skipped.",
+        "The download uses Shopify's customer CSV headers and only includes rows Shopify can import.",
+        `${result.withoutAddress} exported contact(s) have no shipping address. That is normal for newsletter signups and marketing contacts who never placed an order.`,
+        `${result.skippedMissingName} contact(s) were skipped because Shopify requires both a first and last name.`,
+        "Rows without email are also skipped.",
       ],
     };
   }

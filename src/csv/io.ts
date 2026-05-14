@@ -15,7 +15,8 @@ export function parseCsv(text: string): { headers: string[]; rows: Record<string
   const rows = parsed.data.map((row) => {
     const normalized: Record<string, string> = {};
     for (const [key, value] of Object.entries(row)) {
-      normalized[key] = value ?? "";
+      const cleanKey = key.replace(/^\uFEFF/, "").trim();
+      normalized[cleanKey] = value ?? "";
     }
     return normalized;
   });
