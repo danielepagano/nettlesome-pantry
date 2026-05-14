@@ -87,20 +87,50 @@ describe("transformCustomers", () => {
       defaultCountryCode: "US",
     });
 
-    expect(result.importedCount).toBe(3);
+    expect(result.importedCount).toBe(2);
     expect(result.skippedMissingEmail).toBe(1);
-
-    const subscriber = result.rows.find((row) => row.Email === "subscriber@example.com");
-    expect(subscriber?.["Accepts Email Marketing"]).toBe("yes");
-    expect(subscriber?.["Default Address Country Code"]).toBe("US");
+    expect(result.skippedMissingName).toBe(1);
 
     const buyer = result.rows.find((row) => row.Email === "buyer@example.com");
     expect(buyer?.["Default Address Province Code"]).toBe("UT");
     expect(buyer?.["Accepts Email Marketing"]).toBe("no");
 
-    expect(result.withoutAddress).toBe(2);
-    expect(result.withoutName).toBe(1);
+    expect(result.withoutAddress).toBe(1);
     expect(result.warnings.some((warning) => warning.includes("no shipping address"))).toBe(false);
+  });
+
+  it("maps Squarespace name columns regardless of header casing", () => {
+    const result = transformCustomers([
+      {
+        Email: "jane@example.com",
+        "First name": "Jane",
+        "Last name": "Doe",
+        "Accepts Marketing": "yes",
+      },
+    ]);
+
+    expect(result.importedCount).toBe(1);
+    expect(result.rows[0]?.["First Name"]).toBe("Jane");
+    expect(result.rows[0]?.["Last Name"]).toBe("Doe");
+    expect(result.rows[0]?.["Accepts Email Marketing"]).toBe("yes");
+    expect(result.rows[0]?.["Accepts SMS Marketing"]).toBe("no");
+    expect(result.rows[0]?.["Tax Exempt"]).toBe("no");
+  });
+
+  it("falls back to shipping name when first and last name are blank", () => {
+    const result = transformCustomers([
+      {
+        Email: "ship@example.com",
+        "First Name": "",
+        "Last Name": "",
+        "Shipping Name": "Alex Sample",
+        "Accepts Marketing": "false",
+      },
+    ]);
+
+    expect(result.importedCount).toBe(1);
+    expect(result.rows[0]?.["First Name"]).toBe("Alex");
+    expect(result.rows[0]?.["Last Name"]).toBe("Sample");
   });
 });
 
@@ -120,6 +150,7 @@ describe("local test-data smoke", () => {
 
     expect(products.productCount).toBeGreaterThan(30);
     expect(products.variantCount).toBeGreaterThan(products.productCount);
-    expect(customers.importedCount).toBeGreaterThan(90);
+    expect(customers.importedCount).toBe(76);
+    expect(customers.skippedMissingName).toBe(23);
   });
 });

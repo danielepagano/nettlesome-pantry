@@ -217,10 +217,11 @@ function labelForStat(key: string): string {
     linksRewritten: "Links rewritten",
     linksUnchanged: "Links unchanged",
     linksFlagged: "Links flagged for review",
-    imported: "Customers imported",
+    sourceContacts: "Contacts in Squarespace export",
+    imported: "Customers ready to import",
     skippedMissingEmail: "Skipped rows without email",
+    skippedMissingName: "Skipped rows without first or last name",
     withoutAddress: "Contacts without shipping address",
-    withoutName: "Contacts without a name",
   };
   return labels[key] ?? key;
 }
